@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { BookOpen, Check, X, Calendar as CalendarIcon, Clock, Mail } from 'lucide-react';
