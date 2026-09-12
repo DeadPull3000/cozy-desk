@@ -1,4 +1,4 @@
-﻿from app.database import SessionLocal
+from app.database import SessionLocal
 from app.models import Candidate, AuditLog, EventType, CandidateStatus
 from datetime import datetime, timedelta, timezone
 
@@ -35,5 +35,6 @@ audit = AuditLog(
 db.add(audit)
 db.commit()
 
-print("🌱 Seeded database with cozy study desk dummy data!")
+print("Seeded database with cozy study desk dummy data!")
 db.close()
+
