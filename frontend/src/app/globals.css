@@ -1,0 +1,58 @@
+﻿@import "tailwindcss";
+
+/* ============================================
+   Cozy Digital Study Desk — Design Tokens
+   Tailwind v4 @theme configuration
+   ============================================ */
+
+@theme {
+  /* --- Primary Backgrounds & Surfaces --- */
+  --color-warm-ivory: #F7F2E8;
+  --color-soft-cream: #FFF9F0;
+  --color-oat-beige: #EDE3D2;
+
+  /* --- Typography --- */
+  --color-espresso: #3B3028;
+  --color-warm-taupe: #786A5F;
+
+  /* --- Semantic Accents --- */
+  --color-sage-green: #7C9275;    /* Approved / Completed */
+  --color-dusty-rose: #C58F8F;   /* Personal / Soft reminder */
+  --color-terracotta: #B8755B;   /* Deadlines / Urgent */
+  --color-soft-butter: #E7C978;  /* Pending / Highlights */
+  --color-dusty-blue: #8FA8AD;   /* Information / Neutral */
+
+  /* --- Typography --- */
+  --font-serif: var(--font-dm-serif), serif;
+  --font-sans: var(--font-inter), sans-serif;
+
+  /* --- Shadows --- */
+  --shadow-paper: 0 4px 14px 0 rgba(120, 106, 95, 0.08);
+  --shadow-paper-hover: 0 6px 20px 0 rgba(120, 106, 95, 0.12);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-warm-ivory);
+    color: var(--color-espresso);
+  }
+
+  ::selection {
+    background-color: var(--color-soft-butter);
+    color: var(--color-espresso);
+  }
+}
+
+@layer utilities {
+  .card-stationery {
+    background-color: var(--color-soft-cream);
+    border: 1px solid var(--color-oat-beige);
+    border-radius: 16px;
+    box-shadow: var(--shadow-paper);
+    transition: box-shadow 200ms;
+  }
+
+  .card-stationery:hover {
+    box-shadow: var(--shadow-paper-hover);
+  }
+}
