@@ -1,69 +1,136 @@
-import Image from "next/image";
+﻿'use client';
+
+import { useEffect, useState } from 'react';
+import { BookOpen, Check, X, Calendar as CalendarIcon, Clock, Mail } from 'lucide-react';
+import { format } from 'date-fns';
+
+type Candidate = {
+  id: number;
+  title: string;
+  course: string | null;
+  source: string;
+  deadline: string | null;
+  confidence: number;
+};
 
 export default function Home() {
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/candidates/pending')
+      .then((res) => res.json())
+      .then((data) => {
+        setCandidates(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch candidates", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleAction = async (id: number, action: 'APPROVED' | 'REJECTED') => {
+    // Optimistic UI update - remove the note from the desk immediately
+    setCandidates((prev) => prev.filter((c) => c.id !== id));
+    
+    await fetch(`http://localhost:8000/api/candidates/${id}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: action }),
+    });
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="max-w-3xl mx-auto px-6 py-16 min-h-screen">
+      
+      {/* Header Section */}
+      <header className="mb-16">
+        <h1 className="font-serif text-4xl text-espresso mb-2 tracking-tight">
+          Good evening, Vaishnavi.
+        </h1>
+        <p className="text-warm-taupe text-lg font-light flex items-center gap-2">
+          {candidates.length > 0 
+            ? `I found ${candidates.length} thing${candidates.length > 1 ? 's' : ''} that might belong on your calendar.` 
+            : "Your desk is perfectly clear."}
+        </p>
+      </header>
+
+      {/* Things I Found Section */}
+      <section>
+        <h2 className="text-sm font-semibold tracking-widest uppercase text-warm-taupe mb-6 border-b border-oat-beige pb-2 flex items-center gap-2">
+          <Mail className="w-4 h-4" /> Inbox
+        </h2>
+        
+        {loading ? (
+          <p className="text-warm-taupe text-sm italic">Organizing your desk...</p>
+        ) : (
+          <div className="space-y-6">
+            {candidates.map((candidate) => (
+              <div key={candidate.id} className="card-stationery p-6 relative group">
+                
+                {/* Confidence indicator / little tag */}
+                <div className="absolute -top-3 right-6 bg-warm-ivory border border-oat-beige text-[10px] uppercase tracking-wider text-warm-taupe px-3 py-1 rounded-full shadow-sm">
+                  {Math.round(candidate.confidence * 100)}% Match
+                </div>
+
+                <div className="flex items-start gap-4 mb-5">
+                  <div className="bg-warm-ivory p-3 rounded-xl border border-oat-beige text-terracotta shrink-0">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    {candidate.course && (
+                      <p className="text-xs font-medium text-warm-taupe mb-1 flex items-center gap-1">
+                        {candidate.course}
+                      </p>
+                    )}
+                    <h3 className="font-serif text-xl text-espresso leading-snug">
+                      {candidate.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="bg-warm-ivory/50 rounded-lg p-4 mb-6 border border-oat-beige/50 space-y-2">
+                  {candidate.deadline && (
+                    <div className="flex items-center gap-2 text-sm text-espresso">
+                      <CalendarIcon className="w-4 h-4 text-terracotta" />
+                      <span>Due {format(new Date(candidate.deadline), 'MMMM do')}</span>
+                      <span className="text-warm-taupe mx-1">·</span>
+                      <Clock className="w-4 h-4 text-warm-taupe" />
+                      <span className="text-warm-taupe">{format(new Date(candidate.deadline), 'h:mm a')}</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-warm-taupe font-medium pt-1">
+                    Found in {candidate.source}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => handleAction(candidate.id, 'APPROVED')}
+                    className="flex-1 bg-sage-green/10 hover:bg-sage-green/20 text-sage-green transition-colors border border-sage-green/20 py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" /> Add to Calendar
+                  </button>
+                  <button 
+                    onClick={() => handleAction(candidate.id, 'REJECTED')}
+                    className="px-5 py-2.5 bg-warm-ivory hover:bg-oat-beige text-warm-taupe transition-colors border border-oat-beige rounded-lg text-sm font-medium flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" /> Ignore
+                  </button>
+                </div>
+              </div>
+            ))}
+            
+            {candidates.length === 0 && !loading && (
+              <div className="text-center py-16 bg-soft-cream rounded-[16px] border border-oat-beige border-dashed">
+                <p className="text-warm-taupe">You are all caught up.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
+
