@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BookOpen, Check, X, Calendar as CalendarIcon, Clock, Mail, RefreshCw } from 'lucide-react';
+import { BookOpen, Check, X, Calendar as CalendarIcon, Clock, Mail, RefreshCw, Wand2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 type Candidate = {
@@ -17,6 +17,7 @@ export default function Home() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncingGmail, setSyncingGmail] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:8000/api/candidates/pending')
@@ -57,6 +58,20 @@ export default function Home() {
     }
   };
 
+  const handleGmailSync = async () => {
+    setSyncingGmail(true);
+    try {
+      await fetch('http://localhost:8000/api/candidates/sync/gmail', { method: 'POST' });
+      const res = await fetch('http://localhost:8000/api/candidates/pending');
+      const data = await res.json();
+      setCandidates(data);
+    } catch (err) {
+      console.error("Gmail sync failed", err);
+    } finally {
+      setSyncingGmail(false);
+    }
+  };
+
   return (
     <main className="max-w-5xl mx-auto px-6 py-16 min-h-screen">
       
@@ -78,14 +93,24 @@ export default function Home() {
           <h2 className="text-sm font-semibold tracking-widest uppercase text-warm-taupe flex items-center gap-2">
             <Mail className="w-4 h-4" /> Inbox
           </h2>
-          <button 
-            onClick={handleSync} 
-            disabled={syncing}
-            className="text-warm-taupe hover:text-espresso transition-colors flex items-center gap-1 text-xs"
-          >
-            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing...' : 'Sync Classroom'}
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleSync}
+              disabled={syncing || syncingGmail}
+              className="text-warm-taupe hover:text-espresso transition-colors flex items-center gap-1 text-xs"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync Classroom'}
+            </button>
+            <button
+              onClick={handleGmailSync}
+              disabled={syncing || syncingGmail}
+              className="text-warm-taupe hover:text-dusty-blue transition-colors flex items-center gap-1 text-xs"
+            >
+              <Wand2 className={`w-3 h-3 ${syncingGmail ? 'animate-pulse text-dusty-blue' : ''}`} />
+              {syncingGmail ? 'AI Reading...' : 'Sync Gmail'}
+            </button>
+          </div>
         </div>
         
         {loading ? (
@@ -101,8 +126,8 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-start gap-4 mb-5">
-                  <div className="bg-warm-ivory p-3 rounded-xl border border-oat-beige text-terracotta shrink-0">
-                    <BookOpen className="w-5 h-5" />
+                  <div className={`p-3 rounded-xl border shrink-0 ${candidate.source === 'Gmail' ? 'bg-dusty-blue/10 border-dusty-blue/20 text-dusty-blue' : 'bg-warm-ivory border-oat-beige text-terracotta'}`}>
+                    {candidate.source === 'Gmail' ? <Mail className="w-5 h-5" /> : <BookOpen className="w-5 h-5" />}
                   </div>
                   <div>
                     {candidate.course && (

@@ -55,6 +55,7 @@ def update_candidate_status(
     return candidate
 
 from ..services.classroom_sync import sync_classroom_assignments
+from ..services.gmail_sync import sync_gmail_events
 
 @router.post("/sync/classroom")
 def trigger_classroom_sync(db: Session = Depends(get_db)):
@@ -63,4 +64,14 @@ def trigger_classroom_sync(db: Session = Depends(get_db)):
         result = sync_classroom_assignments(db)
         return result
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/sync/gmail")
+def trigger_gmail_sync(db: Session = Depends(get_db)):
+    """Trigger AI extraction from unread Gmails."""
+    try:
+        result = sync_gmail_events(db)
+        return result
+    except Exception as e:
+        print(f"Gmail Sync error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
