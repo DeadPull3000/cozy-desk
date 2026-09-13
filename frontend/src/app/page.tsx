@@ -58,7 +58,7 @@ export default function Home() {
   };
 
   return (
-    <main className="max-w-3xl mx-auto px-6 py-16 min-h-screen">
+    <main className="max-w-5xl mx-auto px-6 py-16 min-h-screen">
       
       {/* Header Section */}
       <header className="mb-16">
@@ -91,7 +91,7 @@ export default function Home() {
         {loading ? (
           <p className="text-warm-taupe text-sm italic">Organizing your desk...</p>
         ) : (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {candidates.map((candidate) => (
               <div key={candidate.id} className="card-stationery p-6 relative group">
                 
