@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BookOpen, Check, X, Calendar as CalendarIcon, Clock, Mail } from 'lucide-react';
+import { BookOpen, Check, X, Calendar as CalendarIcon, Clock, Mail, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 type Candidate = {
@@ -16,6 +16,7 @@ type Candidate = {
 export default function Home() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:8000/api/candidates/pending')
@@ -41,6 +42,21 @@ export default function Home() {
     });
   };
 
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await fetch('http://localhost:8000/api/candidates/sync/classroom', { method: 'POST' });
+      // Refetch pending candidates after sync
+      const res = await fetch('http://localhost:8000/api/candidates/pending');
+      const data = await res.json();
+      setCandidates(data);
+    } catch (err) {
+      console.error("Sync failed", err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <main className="max-w-3xl mx-auto px-6 py-16 min-h-screen">
       
@@ -58,9 +74,19 @@ export default function Home() {
 
       {/* Things I Found Section */}
       <section>
-        <h2 className="text-sm font-semibold tracking-widest uppercase text-warm-taupe mb-6 border-b border-oat-beige pb-2 flex items-center gap-2">
-          <Mail className="w-4 h-4" /> Inbox
-        </h2>
+        <div className="flex justify-between items-center mb-6 border-b border-oat-beige pb-2">
+          <h2 className="text-sm font-semibold tracking-widest uppercase text-warm-taupe flex items-center gap-2">
+            <Mail className="w-4 h-4" /> Inbox
+          </h2>
+          <button 
+            onClick={handleSync} 
+            disabled={syncing}
+            className="text-warm-taupe hover:text-espresso transition-colors flex items-center gap-1 text-xs"
+          >
+            <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync Classroom'}
+          </button>
+        </div>
         
         {loading ? (
           <p className="text-warm-taupe text-sm italic">Organizing your desk...</p>

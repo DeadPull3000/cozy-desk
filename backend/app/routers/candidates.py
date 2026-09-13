@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
@@ -39,3 +39,14 @@ def update_candidate_status(
     db.refresh(candidate)
     
     return candidate
+
+from ..services.classroom_sync import sync_classroom_assignments
+
+@router.post("/sync/classroom")
+def trigger_classroom_sync(db: Session = Depends(get_db)):
+    """Trigger a sync with Google Classroom."""
+    try:
+        result = sync_classroom_assignments(db)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
