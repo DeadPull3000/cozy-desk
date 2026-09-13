@@ -4,6 +4,7 @@ from typing import List
 from ..database import get_db
 from ..models import Candidate, AuditLog, CandidateStatus
 from ..schemas import CandidateResponse, CandidateStatusUpdate
+from ..services.calendar_writer import add_event_to_calendar
 
 router = APIRouter(prefix="/api/candidates", tags=["candidates"])
 
@@ -20,15 +21,15 @@ def update_candidate_status(
     update_data: CandidateStatusUpdate, 
     db: Session = Depends(get_db)
 ):
-    """Update status (Approve/Reject) and maintain audit trail."""
+    """Update status (Approve/Reject), write to Calendar if approved, and maintain audit trail."""
     candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
 
     old_status = candidate.status
     candidate.status = update_data.status
-    
-    # Write to Audit Trail
+
+    # 1. Write the status change to Audit Trail
     audit_entry = AuditLog(
         candidate_id=candidate.id,
         action=f"User changed status from {old_status.value} to {update_data.status.value}",
@@ -37,7 +38,20 @@ def update_candidate_status(
     db.add(audit_entry)
     db.commit()
     db.refresh(candidate)
-    
+
+    # 2. Trigger Execution Layer if APPROVED
+    if update_data.status == CandidateStatus.APPROVED:
+        try:
+            add_event_to_calendar(db, candidate)
+            # add_event_to_calendar updates the status to CREATED, so we refresh again
+            db.refresh(candidate)
+        except Exception as e:
+            print(f"Failed to write to calendar: {e}")
+            # Revert the status if calendar write fails so the user can try again
+            candidate.status = old_status
+            db.commit()
+            raise HTTPException(status_code=500, detail=f"Failed to add to Google Calendar: {str(e)}")
+
     return candidate
 
 from ..services.classroom_sync import sync_classroom_assignments
